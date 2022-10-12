@@ -41,4 +41,31 @@ function calldataVal(uint256 startByte, uint256 length)
     }
 ```
 
-So assuming we have a 32 bytes calldata (256 bits), using this function we will get a piece of that calldata. First, we make sure that length is smaller than 0x21(32) for oboius reasons. Second, we make sure that the calldata is long enough to reach "startByte" + "length". Using assembly and the "CALLDATALOAD" opcpde we extract tbe bytes from the startByte. Finally we use the right shift to remove the part we don't want.
+So assuming we have a 32 bytes calldata (256 bits), using this function we will get a piece of that calldata. First, we make sure that length is smaller than 0x21(32) for obvious reasons. Second, we make sure that the calldata is long enough to reach "startByte" + "length". Using assembly and the "CALLDATALOAD" opcpde we extract tbe bytes from the startByte. Finally we use the right shift to remove the part we don't want.
+
+To make this work we need a fallback function to handle the raw calls:
+
+```
+ fallback() external {
+        uint256 func;
+        func = calldataVal(0, 1); // the first byte is the function selector
+
+        if (func == 1) {
+            _dex.swap(
+                msg.sender,
+                address(uint160(calldataVal(1, 20))),
+                calldataVal(21, 2)
+            );
+        }
+
+        if (func == 2) {
+            _dex.addLiquidity(msg.sender, calldataVal(1, 2), calldataVal(3, 2));
+        }
+
+        if (func == 3) {
+            _dex.removeLiquidity(msg.sender, calldataVal(1, 2));
+        }
+    }
+```
+
+First of all, we will interpret only the first byte of the data as it's the function selector. In the case is 1, it will perform a swap in the dex, if 2 add liquidity and if is 3 remove liquidity. The neccesary data to call this functions is presupposed to be in the data too, such as the address of the token to swap, amount etc.
