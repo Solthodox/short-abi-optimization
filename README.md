@@ -15,3 +15,30 @@ Most smart contracts are written in Solidity and interpreted by the ABI(Aplicati
 | Destination Address| 20            |  16-35|  0         |0 | 20 |320|
 | Amount            | 32             | 36-67 |  17        |64 | 15 |240
 | TOTAL            |  68|||160||576|
+
+
+## Code overview
+
+For this example we will have a main contract(dex) that only will be called from a proxy contract that receives the function calls as calldata. For this , we will a function to intrepret the calldata: 
+
+```
+/**  
+@dev Isolates and returns a number of bytes from the calldata from @param startbyte to @param startbyte + @param length
+*/
+function calldataVal(uint256 startByte, uint256 length)
+        private
+        pure
+        returns (uint256)
+    {
+        uint256 v;
+        if (length < 0x21) revert CalldataLimitExceeded();
+        if (length + startByte <= msg.data.length) revert BeyondCallDataSize();
+        assembly {
+            v := calldataload(startByte) // use calldataload opcode to extract the bytes
+        }
+        v = v >> (256 - length * 8); // rigth shift
+        return v;
+    }
+```
+
+So assuming we have a 32 bytes calldata (256 bits), using this function we will get a piece of that calldata. First, we make sure that length is smaller than 0x21(32) for oboius reasons. Second, we make sure that the calldata is long enough to reach "startByte" + "length". Using assembly and the "CALLDATALOAD" opcpde we extract tbe bytes from the startByte. Finally we use the right shift to remove the part we don't want.
