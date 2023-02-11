@@ -21,7 +21,7 @@ Most smart contracts are written in Solidity and interpreted by the ABI(Aplicati
 
 For this example we will have a main contract(dex) that only will be called from a proxy contract that receives the function calls as calldata. For this , we will a function to intrepret the calldata: 
 
-```
+```solidity
 /**  
 @dev Isolates and returns a number of bytes from the calldata from @param startbyte to @param startbyte + @param length
 */
@@ -45,7 +45,7 @@ So assuming we have a 32 bytes calldata (256 bits), using this function we will 
 
 To make this work we need a fallback function to handle the raw calls:
 
-```
+```solidity
  fallback() external {
         uint256 func;
         func = calldataVal(0, 1); // the first byte is the function selector
